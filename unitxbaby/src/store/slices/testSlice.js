@@ -64,11 +64,61 @@ export const generateTestSummaries = createAsyncThunk(
         // Remove markdown code blocks if present
         jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
         
-        // Try to fix unterminated strings by finding and closing them
-        let fixed = jsonString;
+        // First, try to extract JSON array using balanced bracket matching
+        const extractJSONArray = (str) => {
+          let depth = 0;
+          let start = -1;
+          let inString = false;
+          let escapeNext = false;
+          
+          for (let i = 0; i < str.length; i++) {
+            const char = str[i];
+            
+            if (escapeNext) {
+              escapeNext = false;
+              continue;
+            }
+            
+            if (char === '\\') {
+              escapeNext = true;
+              continue;
+            }
+            
+            if (char === '"') {
+              inString = !inString;
+              continue;
+            }
+            
+            if (inString) continue;
+            
+            if (char === '[') {
+              if (start === -1) start = i;
+              depth++;
+            } else if (char === ']') {
+              depth--;
+              if (depth === 0 && start !== -1) {
+                return str.substring(start, i + 1);
+              }
+            }
+          }
+          
+          return null;
+        };
+        
+        // Try to extract array first
+        let extracted = extractJSONArray(jsonString);
+        if (!extracted) {
+          // Fallback to regex if balanced matching fails
+          const arrayMatch = jsonString.match(/\[[\s\S]*\]/);
+          extracted = arrayMatch ? arrayMatch[0] : jsonString;
+        }
+        
+        // Fix unterminated strings in the extracted JSON
+        let fixed = extracted;
         let inString = false;
         let escapeNext = false;
-        let lastQuotePos = -1;
+        let stringStart = -1;
+        const fixes = [];
         
         for (let i = 0; i < fixed.length; i++) {
           const char = fixed[i];
@@ -85,34 +135,55 @@ export const generateTestSummaries = createAsyncThunk(
           
           if (char === '"') {
             if (inString) {
-              lastQuotePos = i;
               inString = false;
+              stringStart = -1;
             } else {
               inString = true;
-              lastQuotePos = i;
+              stringStart = i;
             }
+          }
+          
+          // If we're at the end and still in a string, we need to close it
+          if (i === fixed.length - 1 && inString && stringStart >= 0) {
+            // Close the string at the end
+            fixes.push({ pos: fixed.length, char: '"' });
           }
         }
         
-        // If string is unterminated, close it
-        if (inString && lastQuotePos >= 0) {
-          // Find the position where the string should end (before next comma, bracket, or brace)
-          const nextComma = fixed.indexOf(',', lastQuotePos + 1);
-          const nextBracket = fixed.indexOf(']', lastQuotePos + 1);
-          const nextBrace = fixed.indexOf('}', lastQuotePos + 1);
-          
-          let insertPos = fixed.length;
-          if (nextComma > lastQuotePos) insertPos = Math.min(insertPos, nextComma);
-          if (nextBracket > lastQuotePos) insertPos = Math.min(insertPos, nextBracket);
-          if (nextBrace > lastQuotePos) insertPos = Math.min(insertPos, nextBrace);
-          
-          fixed = fixed.substring(0, insertPos) + '"' + fixed.substring(insertPos);
-        }
+        // Apply fixes in reverse order
+        fixes.reverse().forEach(fix => {
+          fixed = fixed.substring(0, fix.pos) + fix.char + fixed.substring(fix.pos);
+        });
         
-        // Try to extract valid JSON array
-        const arrayMatch = fixed.match(/\[[\s\S]*\]/);
-        if (arrayMatch) {
-          return arrayMatch[0];
+        // Fix trailing commas
+        fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+        
+        // Try to fix unterminated strings by scanning backwards from structural characters
+        const structuralChars = [',', '}', ']'];
+        for (let i = fixed.length - 1; i >= 0; i--) {
+          if (structuralChars.includes(fixed[i])) {
+            // Scan backwards to find if we're in an unterminated string
+            let inStr = false;
+            let esc = false;
+            for (let j = i - 1; j >= 0; j--) {
+              if (esc) {
+                esc = false;
+                continue;
+              }
+              if (fixed[j] === '\\') {
+                esc = true;
+                continue;
+              }
+              if (fixed[j] === '"') {
+                inStr = !inStr;
+                if (!inStr) break; // Found matching quote
+              }
+            }
+            if (inStr && fixed[i - 1] !== '"') {
+              // Insert closing quote before this structural character
+              fixed = fixed.substring(0, i) + '"' + fixed.substring(i);
+            }
+          }
         }
         
         return fixed;
@@ -135,23 +206,87 @@ export const generateTestSummaries = createAsyncThunk(
           console.log('Successfully parsed after fixing malformed JSON');
         } catch (fixError) {
           console.error('Failed to fix JSON:', fixError);
+          console.error('Original parse error:', parseError);
           
-          // Try to extract JSON array from the string
-          const jsonMatch = typeof data.result === 'string' 
-            ? data.result.match(/\[[\s\S]*\]/) 
-            : null;
+          // Log more details about the response for debugging
+          const errorMsg = parseError?.message || String(parseError);
+          const positionMatch = errorMsg.match(/position (\d+)/);
+          const errorPosition = positionMatch ? parseInt(positionMatch[1], 10) : null;
+          const resultPreview = typeof data.result === 'string' 
+            ? (errorPosition 
+                ? data.result.substring(Math.max(0, errorPosition - 100), Math.min(data.result.length, errorPosition + 100))
+                : data.result.substring(0, 200))
+            : 'Non-string result';
+          console.error('Response around error position:', resultPreview);
+          console.error('Full response length:', typeof data.result === 'string' ? data.result.length : 'N/A');
           
-          if (jsonMatch) {
+          // Try to extract JSON array from the string using multiple strategies
+          let jsonMatch = null;
+          
+          // Strategy 1: Simple regex match
+          if (typeof data.result === 'string') {
+            jsonMatch = data.result.match(/\[[\s\S]*\]/);
+          }
+          
+          // Strategy 2: Try to find array start and manually extract
+          if (!jsonMatch && typeof data.result === 'string') {
+            const arrayStart = data.result.indexOf('[');
+            if (arrayStart !== -1) {
+              // Try to find a reasonable end point
+              let depth = 0;
+              let inString = false;
+              let escapeNext = false;
+              let endPos = -1;
+              
+              for (let i = arrayStart; i < data.result.length; i++) {
+                const char = data.result[i];
+                
+                if (escapeNext) {
+                  escapeNext = false;
+                  continue;
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true;
+                  continue;
+                }
+                
+                if (char === '"') {
+                  inString = !inString;
+                  continue;
+                }
+                
+                if (inString) continue;
+                
+                if (char === '[') depth++;
+                if (char === ']') {
+                  depth--;
+                  if (depth === 0) {
+                    endPos = i;
+                    break;
+                  }
+                }
+              }
+              
+              if (endPos !== -1) {
+                jsonMatch = [data.result.substring(arrayStart, endPos + 1)];
+              }
+            }
+          }
+          
+          if (jsonMatch && jsonMatch[0]) {
             try {
-              parsedResult = JSON.parse(jsonMatch[0]);
-              console.log('Successfully extracted array from string');
+              // Try to fix the extracted JSON one more time
+              const reFixed = fixMalformedJSON(jsonMatch[0]);
+              parsedResult = JSON.parse(reFixed);
+              console.log('Successfully extracted and parsed array from string');
             } catch (extractError) {
-              // Last resort: try to manually construct array from partial JSON
               console.error('Failed to extract JSON:', extractError);
-              throw new Error(`Invalid JSON response from API: ${parseError.message}. Could not fix malformed JSON.`);
+              console.error('Extracted JSON preview:', jsonMatch[0].substring(0, 500));
+              throw new Error(`Invalid JSON response from API: ${parseError.message}. Could not fix malformed JSON. Response preview: ${resultPreview}`);
             }
           } else {
-            throw new Error(`Invalid JSON response from API: ${parseError.message}. Could not extract valid JSON array.`);
+            throw new Error(`Invalid JSON response from API: ${parseError.message}. Could not extract valid JSON array. Response preview: ${resultPreview}`);
           }
         }
       }

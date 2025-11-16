@@ -92,8 +92,15 @@ async function tryRestAPIv1(modelName, prompt, maxTokens, temperature) {
       
       if (text) {
         let cleanedResult = text;
-        cleanedResult = cleanedResult.replace(/```json\s*/, '').replace(/```\s*$/, '');
+        // Remove markdown code blocks more aggressively
+        cleanedResult = cleanedResult.replace(/```json\s*/g, '').replace(/```\s*$/g, '').replace(/```\s*/g, '');
+        // Remove any leading/trailing whitespace and newlines
         cleanedResult = cleanedResult.trim();
+        // Try to extract JSON array if the response contains extra text
+        const jsonArrayMatch = cleanedResult.match(/\[[\s\S]*\]/);
+        if (jsonArrayMatch) {
+          cleanedResult = jsonArrayMatch[0];
+        }
         
         return {
           success: true,
@@ -135,7 +142,7 @@ router.post('/', async (req, res) => {
       prompt, 
       maxTokens = 1000, 
       temperature = 0.7, 
-      systemPrompt = "You are a helpful assistant that generates test cases for code. Always respond with valid JSON only, without any markdown formatting, explanations, or code blocks.",
+      systemPrompt = "You are a helpful assistant that generates test cases for code. CRITICAL: You must respond with ONLY a valid JSON array, no markdown, no explanations, no code blocks, no extra text. Every string must be properly closed with quotes. The response must start with '[' and end with ']'. Example format: [{\"id\": \"test-1\", \"description\": \"Test description\", \"type\": \"unit\", \"framework\": \"jest\", \"filePath\": \"file.js\"}]",
       model
     } = req.body;
 
@@ -196,8 +203,15 @@ router.post('/', async (req, res) => {
         }
 
         let cleanedResult = response.text();
-        cleanedResult = cleanedResult.replace(/```json\s*/, '').replace(/```\s*$/, '');
+        // Remove markdown code blocks more aggressively
+        cleanedResult = cleanedResult.replace(/```json\s*/g, '').replace(/```\s*$/g, '').replace(/```\s*/g, '');
+        // Remove any leading/trailing whitespace and newlines
         cleanedResult = cleanedResult.trim();
+        // Try to extract JSON array if the response contains extra text
+        const jsonArrayMatch = cleanedResult.match(/\[[\s\S]*\]/);
+        if (jsonArrayMatch) {
+          cleanedResult = jsonArrayMatch[0];
+        }
 
         console.log(`Successfully generated content with model: ${cleanModelName}`);
         console.log(`Result length: ${cleanedResult.length} characters`);
