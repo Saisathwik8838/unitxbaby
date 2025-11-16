@@ -238,7 +238,7 @@ const RepositoryExplorer = () => {
     return languageMap[ext] || ext;
   };
 
-  const getTestLanguage = (framework) => {
+    const getTestLanguage = (framework) => {
     const frameworkMap = {
       'jest': 'javascript',
       'mocha': 'javascript',
@@ -266,90 +266,71 @@ const RepositoryExplorer = () => {
     setFullscreenLanguage(language);
     setIsFullscreen(true);
     
-    const element = document.documentElement;
-    if (element.requestFullscreen) {
-      element.requestFullscreen();
-    } else if (element.webkitRequestFullscreen) {
-      element.webkitRequestFullscreen();
-    } else if (element.msRequestFullscreen) {
-      element.msRequestFullscreen();
-    }
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
   };
 
   const handleExitFullscreen = () => {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen();
-    }
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
     setIsFullscreen(false);
     setFullscreenContent(null);
   };
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+    const onFSChange = () => {
+      if (!document.fullscreenElement) {
         setIsFullscreen(false);
         setFullscreenContent(null);
       }
     };
 
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-        setIsFullscreen(false);
-        setFullscreenContent(null);
-      }
+    const onESC = (e) => {
+      if (e.key === 'Escape' && isFullscreen) handleExitFullscreen();
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('msfullscreenchange', handleFullscreenChange);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('fullscreenchange', onFSChange);
+    document.addEventListener('keydown', onESC);
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('fullscreenchange', onFSChange);
+      document.removeEventListener('keydown', onESC);
     };
   }, [isFullscreen]);
 
-  if (status === 'loading') {
+  // Loading state
+  if (status === "loading") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-lg p-8">
-        <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
-        <p className="mt-4 text-gray-600">Loading...</p>
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gradient-to-b from-transparent to-indigo-50 rounded-2xl p-8">
+        <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+        <p className="mt-4 text-gray-700 text-lg">Loading...</p>
       </div>
     );
   }
 
+  // Unauthenticated
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">GitHub Repository Explorer</h2>
-        <p className="text-gray-600 mb-6 text-center">
-          Please sign in with GitHub to explore your repositories and generate test cases.
+      <div className="flex flex-col items-center justify-center min-h-[400px] rounded-2xl p-10 bg-gradient-to-br from-indigo-50 via-violet-50 to-pink-50 shadow-xl border border-white/50 backdrop-blur-sm">
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">Welcome to UnitxTester</h2>
+        <p className="text-gray-700 text-center mb-6 max-w-md">
+          Sign in with GitHub to explore your repositories and generate AI-powered test cases.
         </p>
         <SignInButton />
       </div>
     );
   }
 
+  // Access Token invalid
   if (!session.accessToken) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">GitHub Repository Explorer</h2>
-        <p className="text-gray-600 mb-6 text-center">
-          Access token not available. Please sign out and sign in again.
+      <div className="flex flex-col items-center justify-center min-h-[400px] rounded-2xl p-10 bg-gradient-to-br from-indigo-50 via-violet-50 to-pink-50 shadow-xl border border-white/50 backdrop-blur-sm">
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">Authentication Error</h2>
+        <p className="text-gray-700 text-center mb-6 max-w-md">
+          Access token missing. Please sign out and log in again.
         </p>
         <SignOutButton />
       </div>
@@ -357,10 +338,10 @@ const RepositoryExplorer = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Top Header */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {selectedRepo && (
             <button
               onClick={() => {
@@ -368,128 +349,170 @@ const RepositoryExplorer = () => {
                 dispatch(clearSelectedFiles());
                 dispatch(setFileContent(null));
               }}
-              className="p-2 hover:bg-gray-100 rounded"
+              className="p-2 rounded-md bg-white/10 hover:bg-white/20 transition-all shadow-sm border border-white/40"
+              title="Back to repositories"
             >
-              <FaArrowLeft />
+              <FaArrowLeft className="text-gray-700" />
             </button>
           )}
-          <h3 className="text-xl font-semibold">
-            {selectedRepo ? `Repository: ${selectedRepo}` : 'Your Repositories'}
+
+          <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
+            {selectedRepo ? `Repository: ${selectedRepo}` : 'Your GitHub Repositories'}
           </h3>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setShowHelpModal(true)}
-            className="p-2 hover:bg-gray-100 rounded text-gray-600 hover:text-indigo-600"
+            className="p-2 rounded-lg bg-gradient-to-r from-indigo-200 to-violet-200 hover:from-indigo-300 hover:to-violet-300 shadow-sm transition-all"
             title="How to use this page"
           >
-            <FaQuestionCircle className="text-xl" />
+            <FaQuestionCircle className="text-indigo-700 text-lg" />
           </button>
           <SignOutButton />
         </div>
       </div>
 
-      {/* Repository List */}
+      {/* Repo List */}
       {!selectedRepo && (
-        <div>
+        <>
           {repoLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading repositories...</p>
+            <div className="flex justify-center py-10">
+              <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
             </div>
           ) : repos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {repos.map((repo) => (
                 <div
                   key={repo.id}
                   onClick={() => handleRepoSelect(repo)}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  className="relative cursor-pointer group transition-all transform hover:-translate-y-2 hover:shadow-2xl rounded-2xl overflow-hidden"
                 >
-                  <h4 className="font-semibold text-lg mb-2">{repo.name}</h4>
-                  <p className="text-sm text-gray-600 mb-2">{repo.description || 'No description'}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>{repo.language || 'N/A'}</span>
-                    <span className="text-indigo-600">Click to explore →</span>
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 via-violet-500 to-pink-500 opacity-10 blur-xl group-hover:opacity-20 transition"></div>
+
+                  <div className="relative z-10 bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow">
+                    <h4 className="text-xl font-semibold text-gray-900 mb-2">
+                      {repo.name}
+                    </h4>
+                    <p className="text-sm text-gray-700 line-clamp-2 mb-3">
+                      {repo.description || 'No description'}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-3 text-sm">
+                      <span className="px-2 py-1 bg-white/50 rounded-full text-gray-800 shadow-sm">
+                        {repo.language || 'N/A'}
+                      </span>
+                      <span className="font-medium text-indigo-600 group-hover:underline">
+                        Explore →
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-600">
-              <p>No repositories found.</p>
+            <div className="text-center text-gray-600 py-10">
+              No repositories found.
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Directory Browser */}
       {selectedRepo && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* File Browser */}
-          <div className="lg:col-span-1 border border-gray-200 rounded-lg p-4 bg-white">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+          
+          {/* Left Column – Directory Tree */}
+          <div className="lg:col-span-1 bg-gradient-to-b from-white to-indigo-50 border border-white/40 shadow-xl rounded-2xl p-5 backdrop-blur-sm">
+
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 {pathHistory.length > 1 && (
                   <button
                     onClick={() => dispatch(goBackInHistory())}
-                    className="p-2 hover:bg-gray-100 rounded"
+                    className="p-2 bg-white/60 hover:bg-white shadow-sm rounded-md transition-all border border-gray-200"
+                    title="Go Back"
                   >
-                    <FaArrowLeft />
+                    <FaArrowLeft className="text-gray-700" />
                   </button>
                 )}
                 <span className="text-sm font-medium text-gray-700">
-                  {currentPath || 'Root'}
+                  {currentPath || "Root"}
                 </span>
               </div>
             </div>
 
+            {/* Directory Items */}
             {repoLoading ? (
-              <div className="text-center py-4">
-                <div className="animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto"></div>
+              <div className="text-center py-8">
+                <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
               </div>
             ) : (
-              <div className="space-y-1 max-h-96 overflow-y-auto">
-                {directoryContents.map((item) => (
-                  <div
-                    key={item.path}
-                    onClick={() => handleItemClick(item)}
-                    className={`flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer ${
-                      item.type === 'dir' ? 'font-medium' : ''
-                    }`}
-                  >
-                    {item.type === 'dir' ? (
-                      <FaFolder className="text-blue-500" />
-                    ) : (
-                      <FaFile className="text-gray-400" />
-                    )}
-                    <span className="flex-1 text-sm">{item.name}</span>
-                    {selectedFiles.some(f => f.path === item.path) && (
-                      <FaCheck className="text-green-500" />
-                    )}
-                  </div>
-                ))}
+              <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2">
+                {directoryContents.map((item) => {
+                  const isSelected = selectedFiles.some((f) => f.path === item.path);
+
+                  return (
+                    <div
+                      key={item.path}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all group ${
+                        item.type === "dir"
+                          ? "bg-gradient-to-r from-indigo-50 to-violet-50 hover:from-indigo-100 hover:to-violet-100"
+                          : "bg-white hover:bg-gray-100"
+                      } hover:-translate-y-0.5 shadow-sm`}
+                      onClick={() => handleItemClick(item)}
+                      title={item.path}
+                    >
+                      <div
+                        className={`p-2 rounded-lg shadow-sm ${
+                          item.type === "dir"
+                            ? "bg-gradient-to-br from-indigo-500 to-violet-500 text-white"
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {item.type === "dir" ? <FaFolder /> : <FaFile />}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center">
+                          <span className="truncate font-medium text-gray-800 text-sm">
+                            {item.name}
+                          </span>
+                          {isSelected && <FaCheck className="text-green-600" />}
+                        </div>
+                        <span className="text-xs text-gray-500 truncate">{item.path}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             {/* Selected Files */}
             {selectedFiles.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Selected Files ({selectedFiles.length})</span>
+              <div className="mt-5 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm text-gray-800">
+                    Selected Files ({selectedFiles.length})
+                  </span>
                   <button
+                    className="text-xs text-rose-600 hover:text-rose-800"
                     onClick={() => dispatch(clearSelectedFiles())}
-                    className="text-xs text-red-600 hover:text-red-800"
                   >
                     Clear All
                   </button>
                 </div>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+
+                <div className="mt-2 space-y-2 max-h-36 overflow-y-auto pr-1">
                   {selectedFiles.map((file) => (
-                    <div key={file.path} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded">
-                      <span className="truncate flex-1">{file.name}</span>
+                    <div
+                      key={file.path}
+                      className="bg-white/70 p-2 rounded-md border border-gray-200 flex justify-between items-center shadow-sm"
+                    >
+                      <span className="flex-1 truncate text-xs">{file.name}</span>
                       <button
                         onClick={() => dispatch(removeSelectedFile(file.path))}
-                        className="text-red-600 hover:text-red-800 ml-2"
+                        className="text-rose-600 hover:text-rose-800 text-sm"
                       >
                         <FaTimes />
                       </button>
@@ -501,86 +524,122 @@ const RepositoryExplorer = () => {
 
             {/* Test Generation Controls */}
             {selectedFiles.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Test Framework</label>
-                    <select
-                      value={testFramework}
-                      onChange={(e) => dispatch(setTestFramework(e.target.value))}
-                      className="w-full mt-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                    >
-                      <option value="jest">Jest</option>
-                      <option value="mocha">Mocha</option>
-                      <option value="vitest">Vitest</option>
-                      <option value="pytest">PyTest</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Test Type</label>
-                    <select
-                      value={testType}
-                      onChange={(e) => dispatch(setTestType(e.target.value))}
-                      className="w-full mt-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                    >
-                      <option value="unit">Unit</option>
-                      <option value="integration">Integration</option>
-                      <option value="e2e">E2E</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={handleGenerateTests}
-                    disabled={isGeneratingSummaries}
-                    className="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                
+                {/* Framework Select */}
+                <div className="mb-3">
+                  <label className="text-xs font-medium text-gray-700">Test Framework</label>
+                  <select
+                    value={testFramework}
+                    onChange={(e) => dispatch(setTestFramework(e.target.value))}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm bg-white shadow-sm"
                   >
-                    <FaMagic />
-                    {isGeneratingSummaries ? 'Generating...' : 'Generate Test Cases'}
-                  </button>
+                    <option value="jest">Jest</option>
+                    <option value="mocha">Mocha</option>
+                    <option value="vitest">Vitest</option>
+                    <option value="pytest">PyTest</option>
+                  </select>
                 </div>
+
+                {/* Test Type Select */}
+                <div className="mb-4">
+                  <label className="text-xs font-medium text-gray-700">Test Type</label>
+                  <select
+                    value={testType}
+                    onChange={(e) => dispatch(setTestType(e.target.value))}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm bg-white shadow-sm"
+                  >
+                    <option value="unit">Unit</option>
+                    <option value="integration">Integration</option>
+                    <option value="e2e">E2E</option>
+                  </select>
+                </div>
+
+                {/* Generate Button */}
+                <button
+                  onClick={handleGenerateTests}
+                  disabled={isGeneratingSummaries}
+                  className={`w-full relative overflow-hidden group px-4 py-2 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all shadow-lg ${
+                    isGeneratingSummaries
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-indigo-500 via-violet-500 to-pink-500 hover:scale-[1.02]"
+                  }`}
+                >
+                  <span className="z-10 flex items-center gap-2">
+                    <FaMagic />
+                    {isGeneratingSummaries ? "Generating..." : "Generate Test Cases"}
+                  </span>
+
+                  {!isGeneratingSummaries && (
+                    <span className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity bg-gradient-to-r from-indigo-300/40 via-violet-300/40 to-pink-300/40" />
+                  )}
+                </button>
               </div>
             )}
           </div>
 
-          {/* File Content & Test Cases */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* File Content */}
+          {/* Right Column – File Viewer + Test Suggestions */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* File Content Viewer */}
             {fileContent && (
-              <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">{fileContent.name}</h4>
-                  <div className="flex gap-2">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl shadow-xl p-5">
+                
+                {/* File Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+                    <FaFile className="text-indigo-500" /> {fileContent.name}
+                  </h4>
+
+                  <div className="flex gap-3">
+                    {/* Select File Button */}
                     <button
                       onClick={handleFileSelect}
-                      className={`px-3 py-1 text-white text-sm rounded ${
+                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all shadow-sm text-white ${
                         selectedFiles.some(f => f.path === fileContent.path)
-                          ? 'bg-green-600 hover:bg-green-700'
-                          : 'bg-indigo-600 hover:bg-indigo-700'
+                          ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                          : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700"
                       }`}
                     >
-                      {selectedFiles.some(f => f.path === fileContent.path) ? 'Selected ✓' : 'Select File'}
+                      {selectedFiles.some(f => f.path === fileContent.path)
+                        ? "Selected ✓"
+                        : "Select File"}
                     </button>
+
+                    {/* Close File */}
                     <button
                       onClick={() => dispatch(setFileContent(null))}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+                      className="px-4 py-1.5 text-sm font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
                     >
                       Close
                     </button>
                   </div>
                 </div>
-                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded overflow-hidden relative">
+
+                {/* Code Viewer */}
+                <div className="relative border rounded-xl overflow-hidden shadow-lg">
+
+                  {/* Fullscreen Button */}
                   <button
-                    onClick={() => handleFullscreen(fileContent.content, getFileExtension(fileContent.name))}
-                    className="absolute top-2 right-2 z-10 p-2 bg-gray-800 bg-opacity-75 text-white rounded hover:bg-opacity-100 transition-opacity"
+                    onClick={() =>
+                      handleFullscreen(
+                        fileContent.content,
+                        getFileExtension(fileContent.name)
+                      )
+                    }
+                    className="absolute top-3 right-3 z-10 bg-gray-900/70 hover:bg-gray-900 text-white p-2 rounded-md transition"
                     title="Fullscreen"
                   >
                     <FaExpand />
                   </button>
+
+                  {/* Syntax Highlight */}
                   <SyntaxHighlighter
                     language={getFileExtension(fileContent.name)}
                     style={vscDarkPlus}
-                    customStyle={{ margin: 0, borderRadius: '0.5rem' }}
-                    showLineNumbers={true}
-                    wrapLongLines={true}
+                    customStyle={{ margin: 0, fontSize: "0.9rem" }}
+                    showLineNumbers
+                    wrapLongLines
                   >
                     {fileContent.content}
                   </SyntaxHighlighter>
@@ -590,38 +649,50 @@ const RepositoryExplorer = () => {
 
             {/* Test Case Summaries */}
             {testCaseSummaries.length > 0 && (
-              <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                <h4 className="font-medium mb-4 flex items-center gap-2">
-                  <FaCode />
-                  Test Case Suggestions ({testCaseSummaries.length})
+              <div className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl shadow-xl p-6">
+                <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <FaCode className="text-indigo-600" /> Test Case Suggestions
                 </h4>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+
+                <div className="max-h-[420px] overflow-y-auto space-y-4 pr-1">
                   {testCaseSummaries.map((summary) => (
                     <div
                       key={summary.id}
-                      className="border border-gray-200 rounded p-3 hover:bg-gray-50"
+                      className="p-4 rounded-xl bg-white shadow hover:shadow-lg transition-all border border-gray-200 cursor-pointer group"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{summary.description}</p>
-                          <div className="flex gap-2 mt-1">
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 pr-4">
+                          <p className="font-medium text-gray-900 group-hover:text-indigo-700 transition">
+                            {summary.description}
+                          </p>
+
+                          <div className="flex gap-2 mt-2">
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
                               {summary.type}
                             </span>
-                            <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-md">
                               {summary.framework}
                             </span>
+
                             {summary.filePath && (
-                              <span className="text-xs text-gray-500">{summary.filePath}</span>
+                              <span className="text-xs text-gray-500">
+                                {summary.filePath}
+                              </span>
                             )}
                           </div>
                         </div>
+
+                        {/* Generate Code Button */}
                         <button
                           onClick={() => handleGenerateTestCode(summary)}
                           disabled={isGeneratingTests}
-                          className="ml-2 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 disabled:opacity-50"
+                          className={`px-4 py-1.5 text-xs font-medium rounded-md text-white transition-all shadow-sm ${
+                            isGeneratingTests
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-gradient-to-r from-indigo-500 via-violet-500 to-pink-500 hover:scale-105"
+                          }`}
                         >
-                          {isGeneratingTests ? 'Generating...' : 'Generate Code'}
+                          {isGeneratingTests ? "..." : "Generate Code"}
                         </button>
                       </div>
                     </div>
@@ -630,17 +701,17 @@ const RepositoryExplorer = () => {
               </div>
             )}
 
-            {/* Error Display */}
+            {/* Error Box */}
             {error && (
-              <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 shadow">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-red-800 mb-1">Error</p>
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div>
+                    <p className="font-medium text-rose-700">Error</p>
+                    <p className="text-sm text-rose-600 mt-1">{error}</p>
                   </div>
                   <button
                     onClick={() => dispatch(setError(null))}
-                    className="text-red-600 hover:text-red-800 ml-2"
+                    className="text-rose-700 hover:text-rose-900"
                   >
                     <FaTimes />
                   </button>
@@ -649,78 +720,104 @@ const RepositoryExplorer = () => {
             )}
 
             {/* Empty State */}
-            {!fileContent && testCaseSummaries.length === 0 && (
-              <div className="border border-gray-200 rounded-lg p-8 bg-gray-50 text-center">
-                <p className="text-gray-600">Select a file to view its content, or generate test cases for selected files.</p>
-              </div>
-            )}
+            {!fileContent &&
+              testCaseSummaries.length === 0 && (
+                <div className="p-10 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 border border-white/40 rounded-2xl shadow text-center">
+                  <p className="text-gray-600">
+                    Select a file to view its content or generate test cases.
+                  </p>
+                </div>
+              )}
           </div>
         </div>
       )}
 
       {/* Test Code Modal */}
       {showTestModal && selectedTestForModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Generated Test Code</h3>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-white/50 overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-white/70">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <FaCode className="text-indigo-600" /> Generated Test Code
+              </h3>
               <button
                 onClick={() => {
                   setShowTestModal(false);
                   dispatch(setSelectedTestForModal(null));
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 rounded-md hover:bg-gray-200 transition"
               >
-                <FaTimes />
+                <FaTimes className="text-gray-600" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 bg-white/70">
+              
+              {/* Summary Information */}
               <div className="mb-4">
-                <p className="font-medium">{selectedTestForModal.description}</p>
+                <p className="font-medium text-gray-900">{selectedTestForModal.description}</p>
                 <div className="flex gap-2 mt-2">
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
                     {selectedTestForModal.type}
                   </span>
-                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                  <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-md">
                     {selectedTestForModal.framework}
                   </span>
                 </div>
               </div>
-              <div className="border border-gray-200 rounded overflow-hidden relative">
+
+              {/* Code Box */}
+              <div className="relative border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+                
+                {/* Fullscreen Button */}
                 <button
-                  onClick={() => handleFullscreen(selectedTestForModal.code || 'No code generated', getTestLanguage(selectedTestForModal.framework))}
-                  className="absolute top-2 right-2 z-10 p-2 bg-gray-800 bg-opacity-75 text-white rounded hover:bg-opacity-100 transition-opacity"
+                  onClick={() =>
+                    handleFullscreen(
+                      selectedTestForModal.code || "No code generated",
+                      getTestLanguage(selectedTestForModal.framework)
+                    )
+                  }
+                  className="absolute top-3 right-3 z-10 bg-gray-900/70 hover:bg-gray-900 text-white p-2 rounded-md transition"
                   title="Fullscreen"
                 >
                   <FaExpand />
                 </button>
+
+                {/* Syntax Highlighter */}
                 <SyntaxHighlighter
                   language={getTestLanguage(selectedTestForModal.framework)}
                   style={vscDarkPlus}
-                  customStyle={{ margin: 0, borderRadius: '0.5rem' }}
-                  showLineNumbers={true}
-                  wrapLongLines={true}
+                  customStyle={{ margin: 0, fontSize: "0.9rem" }}
+                  wrapLongLines
+                  showLineNumbers
                 >
-                  {selectedTestForModal.code || 'No code generated'}
+                  {selectedTestForModal.code || "No code generated"}
                 </SyntaxHighlighter>
+
               </div>
             </div>
-            <div className="p-4 border-t flex justify-end gap-2">
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-200 bg-white/70 flex justify-end gap-3">
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(selectedTestForModal.code);
-                  alert('Test code copied to clipboard!');
+                  navigator.clipboard.writeText(selectedTestForModal.code || "");
+                  alert("Code copied to clipboard!");
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
               >
                 Copy Code
               </button>
+
               <button
                 onClick={() => {
                   setShowTestModal(false);
                   dispatch(setSelectedTestForModal(null));
                 }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg hover:scale-105 transition"
               >
                 Close
               </button>
@@ -732,23 +829,28 @@ const RepositoryExplorer = () => {
       {/* Fullscreen Code Viewer */}
       {isFullscreen && fullscreenContent && (
         <div className="fixed inset-0 bg-gray-900 z-[9999] flex flex-col">
+          {/* Fullscreen Header */}
           <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
-            <h3 className="text-white font-semibold">Code Viewer (Fullscreen)</h3>
+            <h3 className="text-white font-semibold text-lg">
+              Code Viewer (Fullscreen)
+            </h3>
+
             <button
               onClick={handleExitFullscreen}
-              className="p-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
             >
-              <FaCompress />
-              Exit Fullscreen (ESC)
+              <FaCompress /> Exit Fullscreen
             </button>
           </div>
+
+          {/* Fullscreen Code */}
           <div className="flex-1 overflow-auto p-4">
             <SyntaxHighlighter
               language={fullscreenLanguage}
               style={vscDarkPlus}
-              customStyle={{ margin: 0, borderRadius: '0.5rem' }}
-              showLineNumbers={true}
-              wrapLongLines={true}
+              customStyle={{ margin: 0, fontSize: "1rem" }}
+              wrapLongLines
+              showLineNumbers
             >
               {fullscreenContent}
             </SyntaxHighlighter>
@@ -758,89 +860,85 @@ const RepositoryExplorer = () => {
 
       {/* Help Modal */}
       {showHelpModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[120] p-4">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col border border-white/50 overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h3 className="text-xl font-semibold flex items-center gap-3">
                 <FaInfoCircle className="text-indigo-600" />
-                How to Use This Application
+                How to Use This Tool
               </h3>
+
               <button
                 onClick={() => setShowHelpModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-2 rounded-md hover:bg-gray-200 transition"
               >
-                <FaTimes />
+                <FaTimes className="text-gray-700" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-6">
-                <section>
-                  <h4 className="text-lg font-semibold mb-3 text-indigo-600">Getting Started</h4>
-                  <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li><strong>Sign In:</strong> Click the "Sign in with GitHub" button to authenticate using your GitHub account.</li>
-                    <li><strong>View Repositories:</strong> After signing in, you'll see a list of your GitHub repositories.</li>
-                    <li><strong>Select Repository:</strong> Click on any repository card to explore its contents.</li>
-                  </ol>
-                </section>
 
-                <section>
-                  <h4 className="text-lg font-semibold mb-3 text-indigo-600">Exploring Files</h4>
-                  <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li><strong>Navigate Directories:</strong> Click on folder icons to browse through directories.</li>
-                    <li><strong>View Files:</strong> Click on file icons to view their content with syntax highlighting.</li>
-                    <li><strong>Select Files:</strong> Click the "Select File" button on any file to add it to your selection for test generation.</li>
-                    <li><strong>Fullscreen Mode:</strong> Click the expand icon (⛶) in the top-right corner of any code display to view it in fullscreen mode.</li>
-                    <li><strong>Go Back:</strong> Use the back arrow button to navigate back through directories or return to the repository list.</li>
-                  </ol>
-                </section>
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Getting Started */}
+              <section>
+                <h4 className="text-lg font-semibold mb-2 text-indigo-600">Getting Started</h4>
+                <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                  <li>Sign in with GitHub to access your repositories.</li>
+                  <li>Choose a repository to explore.</li>
+                  <li>Browse folders and view file contents.</li>
+                </ol>
+              </section>
 
-                <section>
-                  <h4 className="text-lg font-semibold mb-3 text-indigo-600">Generating Test Cases</h4>
-                  <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li><strong>Select Files:</strong> Select one or more files that you want to generate tests for.</li>
-                    <li><strong>Choose Framework:</strong> Select your preferred test framework (Jest, Mocha, pytest, etc.) from the dropdown.</li>
-                    <li><strong>Choose Test Type:</strong> Select the type of tests you want (Unit, Integration, E2E, etc.).</li>
-                    <li><strong>Generate:</strong> Click the "Generate Test Cases" button to create test case suggestions.</li>
-                    <li><strong>Review Suggestions:</strong> Browse through the generated test case suggestions.</li>
-                    <li><strong>Generate Code:</strong> Click "Generate Code" on any test case suggestion to generate the actual test code.</li>
-                    <li><strong>Copy Code:</strong> Use the "Copy Code" button in the test code modal to copy the generated code to your clipboard.</li>
-                  </ol>
-                </section>
+              {/* File Exploration */}
+              <section>
+                <h4 className="text-lg font-semibold mb-2 text-indigo-600">Exploring Files</h4>
+                <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                  <li>Navigate folders by clicking on them.</li>
+                  <li>Click on a file to view its contents.</li>
+                  <li>Use fullscreen mode for large files.</li>
+                </ol>
+              </section>
 
-                <section>
-                  <h4 className="text-lg font-semibold mb-3 text-indigo-600">Features</h4>
-                  <ul className="list-disc list-inside space-y-2 text-gray-700">
-                    <li><strong>Syntax Highlighting:</strong> Code is displayed with proper syntax highlighting based on file type.</li>
-                    <li><strong>Line Numbers:</strong> All code displays include line numbers for easy reference.</li>
-                    <li><strong>Fullscreen Mode:</strong> View code in fullscreen for better readability (Press ESC to exit).</li>
-                    <li><strong>Multiple Languages:</strong> Supports 40+ programming languages and test frameworks.</li>
-                    <li><strong>Smart Detection:</strong> Automatically detects the correct language based on file extension or test framework.</li>
-                  </ul>
-                </section>
+              {/* Test Generation */}
+              <section>
+                <h4 className="text-lg font-semibold mb-2 text-indigo-600">Generating Tests</h4>
+                <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                  <li>Select one or more files.</li>
+                  <li>Choose the test framework and type.</li>
+                  <li>Click <strong>Generate Test Cases</strong>.</li>
+                  <li>Generate actual test code from suggestions.</li>
+                </ol>
+              </section>
+              {/* Features */}
+              <section>
+                <h4 className="text-lg font-semibold mb-2 text-indigo-600">Features</h4>
+                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                  <li>Modern UI with gradients and hover animations.</li>
+                  <li>AI-powered test case generation.</li>
+                  <li>Supports 40+ programming languages.</li>
+                  <li>Syntax highlighting with line numbers.</li>
+                  <li>Fullscreen code viewer with ESC support.</li>
+                  <li>Beautiful modals and elegant transitions.</li>
+                </ul>
+              </section>
 
-                <section>
-                  <h4 className="text-lg font-semibold mb-3 text-indigo-600">Keyboard Shortcuts</h4>
-                  <ul className="list-disc list-inside space-y-2 text-gray-700">
-                    <li><strong>ESC:</strong> Exit fullscreen mode</li>
-                    <li><strong>Click Expand Icon:</strong> Enter fullscreen mode for code display</li>
-                  </ul>
-                </section>
-
-                <section>
-                  <h4 className="text-lg font-semibold mb-3 text-indigo-600">Tips</h4>
-                  <ul className="list-disc list-inside space-y-2 text-gray-700">
-                    <li>Select multiple related files to generate comprehensive test cases.</li>
-                    <li>Make sure files have content loaded before generating tests (click on files to load them first).</li>
-                    <li>Use fullscreen mode for better code readability, especially for long files.</li>
-                    <li>The application uses AI to generate test cases, so results may vary based on code complexity.</li>
-                  </ul>
-                </section>
-              </div>
+              {/* Tips */}
+              <section>
+                <h4 className="text-lg font-semibold mb-2 text-indigo-600">Tips</h4>
+                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                  <li>Load file contents before generating tests.</li>
+                  <li>Select multiple related files for better AI results.</li>
+                  <li>Use fullscreen mode for large or complex files.</li>
+                </ul>
+              </section>
             </div>
-            <div className="p-4 border-t flex justify-end">
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowHelpModal(false)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                className="px-5 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg shadow hover:scale-105 transition"
               >
                 Got it!
               </button>
@@ -853,3 +951,5 @@ const RepositoryExplorer = () => {
 };
 
 export default RepositoryExplorer;
+
+  

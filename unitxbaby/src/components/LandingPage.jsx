@@ -1,75 +1,141 @@
 import React, { useState, useEffect } from 'react';
-import { FaGithub, FaPlay, FaMagic, FaCheck } from 'react-icons/fa';
-import { AuthProvider } from '../contexts/AuthContext';
+import { FaMagic, FaPlay, FaCheck, FaTachometerAlt } from 'react-icons/fa';
 import RepositoryExplorer from './RepositoryExplorer';
+import HowItWorks from './HowItWorks';
+import Footer from './Footer';
+import Sidebar from "./Sidebar";
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = "smooth";
+  }, []);
+  
+
   return (
-    <AuthProvider>
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
-        <header className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-sm py-2' : 'bg-transparent py-4'}`}>
-          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <div className="text-2xl font-bold text-indigo-600 flex items-center">
-              <FaMagic className="mr-2" /> UnitxTester
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition-colors">How It Works</a>
-              <a href="#explorer" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">Get Started</a>
-            </div>
-          </nav>
-        </header>
 
-        <section className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            AI-Powered Test Case Generation <br />
-            <span className="text-indigo-600">for Modern Developers</span>
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
-            Automatically generate comprehensive test cases for your GitHub repositories.
-          </p>
-          <a 
-            href="#explorer" 
-            className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg flex items-center justify-center mx-auto w-fit"
-          >
-            <FaPlay className="mr-2" /> Try It Now
-          </a>
-        </section>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
 
-        <section id="explorer" className="py-8 bg-gray-50 w-full min-h-screen">
-          <div className="mx-4 sm:mx-6 lg:mx-8 xl:mx-auto xl:max-w-[95%] 2xl:max-w-7xl">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Explore Your Repository
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Connect your GitHub account to browse your repositories and generate test cases.
-              </p>
-            </div>
-            <div className="w-full bg-white p-4 sm:p-6 shadow-xl rounded-lg border border-gray-200">
-              <RepositoryExplorer />
-              <div className="mt-6 pt-6 border-t border-gray-200 flex flex-wrap items-center justify-center gap-4">
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <FaCheck className="text-green-500" />
-                  <span>Supports JavaScript, TypeScript, Python, and more</span>
-                </div>
+      {/* NAVBAR */}
+      <header
+        className={`fixed w-full z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/80 backdrop-blur-lg shadow-lg py-2 border-b border-white/50"
+            : "bg-transparent py-4"
+        }`}
+      >
+        <nav className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+          
+          {/* BRAND */}
+          <div className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent flex items-center gap-2">
+            <FaMagic className="text-indigo-600 drop-shadow-sm" />
+            UnitxTester
+          </div>
+
+          {/* LINKS */}
+          <div className="hidden md:flex items-center space-x-8">
+
+            <button
+              onClick={() => document.getElementById("how-it-works")?.scrollIntoView()}
+              className="text-gray-700 hover:text-indigo-600 transition font-medium"
+            >
+              How It Works
+            </button>
+
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 text-gray-700 hover:text-pink-600 transition font-medium"
+            >
+              <FaTachometerAlt className="text-pink-500" />
+              Dashboard
+            </button>
+
+            <button
+              onClick={() => {
+                document.getElementById("explorer")?.scrollIntoView();
+              }}
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 
+                         text-white shadow-md hover:shadow-xl hover:scale-105 transition-all"
+            >
+              Get Started
+            </button>
+
+          </div>
+        </nav>
+      </header>
+
+      {/* HERO SECTION */}
+      <section className="pt-44 pb-24 text-center px-6 max-w-7xl mx-auto relative">
+
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-300 blur-[200px] opacity-30 rounded-full"></div>
+        <div className="absolute top-20 -left-40 w-[500px] h-[500px] bg-pink-300 blur-[200px] opacity-30 rounded-full"></div>
+
+        <h1 className="relative text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+          AI-Powered Test Case Generation  
+          <br />
+          <span className="bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent">
+            for Modern Developers
+          </span>
+        </h1>
+
+        <p className="relative text-lg md:text-xl text-gray-700 mt-6 max-w-3xl mx-auto">
+          Automatically generate accurate, AI-driven unit tests for your GitHub repositories —
+          speeding up your development workflow like never before.
+        </p>
+
+        {/* CTA BUTTON (Restored) */}
+      </section>
+
+      {/* HOW IT WORKS */}
+      <HowItWorks />
+
+      {/* EXPLORER SECTION */}
+      <section id="explorer" className="py-16 px-6 scroll-mt-32">
+        <div className="max-w-7xl mx-auto">
+          
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-bold text-gray-900">Explore Your Repository</h2>
+            <p className="text-gray-700 text-lg mt-3">
+              Connect your GitHub account and let the AI handle the test generation.
+            </p>
+          </div>
+
+          <div className="w-full bg-white/80 backdrop-blur-xl border border-white/40 shadow-2xl p-6 rounded-2xl">
+            <RepositoryExplorer />
+
+            <div className="mt-6 pt-6 border-t border-gray-200 flex flex-wrap items-center justify-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FaCheck className="text-green-500" />
+                Supports JavaScript, TypeScript, Python, Java & more
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FaCheck className="text-green-500" />
+                AI-Powered Test Suggestions
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FaCheck className="text-green-500" />
+                Modern UI & Fullscreen Code Viewer
               </div>
             </div>
           </div>
-        </section>
-      </div>
-    </AuthProvider>
+
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <Footer />
+
+    </div>
   );
 };
 
 export default LandingPage;
-

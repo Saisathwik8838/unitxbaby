@@ -11,6 +11,8 @@ const envPath = join(__dirname, '..', '.env');
 dotenv.config({ path: envPath });
 
 console.log('Loading .env from:', envPath);
+console.log('GITHUB_CLIENT_ID:', process.env.GITHUB_CLIENT_ID);
+console.log('GITHUB_REDIRECT_URI:', process.env.GITHUB_REDIRECT_URI);
 console.log('GOOGLE_API_KEY loaded:', !!process.env.GOOGLE_API_KEY);
 console.log('PORT:', process.env.PORT || 3002);
 
